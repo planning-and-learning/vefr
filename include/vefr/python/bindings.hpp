@@ -97,46 +97,12 @@ auto weighing(const G& g, const Weights& weights)
     return [&weights](std::size_t e) { return weights[e]; };
 }
 
-/// The Python visitor as vefr's searches call it: each vertex and edge passed as it is (Python's visitor takes a
-/// Vertex and an Edge).
-class VisitorAdapter
-{
-public:
-    explicit VisitorAdapter(Visitor& visitor) noexcept : m_visitor(&visitor) {}
-
-    // clang-format off
-#define VEFR_PYTHON_FORWARD(NAME) \
-    template<typename X> \
-    Flow NAME(const X& x) { return m_visitor->NAME(x); }
-    // clang-format on
-    // NOLINTBEGIN(cppcoreguidelines-macro-usage): an event is called by its name, which a template cannot spell
-    VEFR_PYTHON_FORWARD(start_vertex)
-    VEFR_PYTHON_FORWARD(discover_vertex)
-    VEFR_PYTHON_FORWARD(examine_vertex)
-    VEFR_PYTHON_FORWARD(finish_vertex)
-    VEFR_PYTHON_FORWARD(examine_edge)
-    VEFR_PYTHON_FORWARD(tree_edge)
-    VEFR_PYTHON_FORWARD(non_tree_edge)
-    VEFR_PYTHON_FORWARD(gray_target)
-    VEFR_PYTHON_FORWARD(black_target)
-    VEFR_PYTHON_FORWARD(back_edge)
-    VEFR_PYTHON_FORWARD(forward_or_cross_edge)
-    VEFR_PYTHON_FORWARD(finish_edge)
-    VEFR_PYTHON_FORWARD(edge_relaxed)
-    VEFR_PYTHON_FORWARD(edge_not_relaxed)
-    // NOLINTEND(cppcoreguidelines-macro-usage)
-#undef VEFR_PYTHON_FORWARD
-
-private:
-    Visitor* m_visitor;
-};
-
 /// `search(visitor)` with the Python visitor given, or with none.
 template<typename F>
 decltype(auto) with_visitor(Visitor* visitor, const F& search)
 {
     if (visitor)
-        return search(VisitorAdapter(*visitor));
+        return search(*visitor);  // its events are the searches' events, by name
     return search(vefr::null_visitor {});
 }
 
@@ -335,13 +301,13 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
         "visitor"_a = nb::none());
     m.def(
         "breadth_first_visit",
-        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::breadth_first_visit(g, sources, detail::VisitorAdapter(visitor)); },
+        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::breadth_first_visit(g, sources, visitor); },
         "graph"_a,
         "sources"_a,
         "visitor"_a);
     m.def(
         "depth_first_visit",
-        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::depth_first_visit(g, sources, detail::VisitorAdapter(visitor)); },
+        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::depth_first_visit(g, sources, visitor); },
         "graph"_a,
         "sources"_a,
         "visitor"_a);
