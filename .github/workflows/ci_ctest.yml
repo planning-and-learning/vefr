@@ -1,0 +1,59 @@
+name: CI Ctest
+
+on:
+  push:
+    branches-ignore:
+      - test-pypi
+  pull_request:
+
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: "2"
+  VEFR_JOBS: "2"
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            build_type: Debug
+          - os: macos-latest
+            build_type: Release
+
+    steps:
+      - name: Checkout vefr
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install python requirements
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip uv
+          uv pip install --system --no-cache -r pyproject.toml --extra test
+        env:
+          PIP_NO_CACHE_DIR: 1
+
+      # Every compiler warning fails the build here, so none goes unnoticed.
+      - name: Configure and Build vefr
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
+                -DVEFR_BUILD_TESTS=ON \
+                -DCMAKE_INSTALL_LIBDIR=lib \
+                -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \
+                -S . -B build_${{ matrix.build_type }} \
+                -DCMAKE_PREFIX_PATH="$(python -c 'import pyurd, pyurd_native; print(f"{pyurd.native_prefix()};{pyurd_native.native_prefix()}")')"
+          cmake --build build_${{ matrix.build_type }} -j2
+
+      - name: Run Tests
+        working-directory: build_${{ matrix.build_type }}/tests
+        run: |
+          URD_LIB_DIR="$(python -c 'import pyurd_native; print(pyurd_native.native_prefix() / "lib")')"
+          export DYLD_LIBRARY_PATH="${URD_LIB_DIR}:$PWD/../src:${DYLD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${URD_LIB_DIR}:$PWD/../src:${LD_LIBRARY_PATH:-}"
+          GTEST_OUTPUT=xml:test-results/ GTEST_COLOR=1 ctest -V

@@ -1,0 +1,35 @@
+name: peachycheck
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  peachycheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        id: python
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: drexlerd/peachycheck@v0.1.0
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        with:
+          # clang-tidy needs compile_commands.json, pyright the package in .venv (the stubs are generated at install).
+          # The native dependencies come with the pyurd and pyurd_native wheels.
+          prepare: |
+            "$PYTHON" -m venv .venv
+            .venv/bin/python -m pip install 'scikit-build-core>=1.0.3,<2' 'cmake>=3.21' 'ninja>=1.5' \
+              'nanobind-backend>=1.0' 'pybrokkr>=0.1.2,<0.2' 'pyurd>=0.1.2,<0.2'
+            PREFIX="$(.venv/bin/python -c 'import pyurd, pyurd_native; print(f"{pyurd.native_prefix()};{pyurd_native.native_prefix()}")')"
+            cmake -S . -B build/peachycheck -G Ninja -DCMAKE_MAKE_PROGRAM="$PWD/.venv/bin/ninja" \
+                  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                  -DVEFR_BUILD_TESTS=ON -DVEFR_BUILD_PYVEFR=ON \
+                  -DCMAKE_PREFIX_PATH="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib \
+                  -DPython_EXECUTABLE="$PWD/.venv/bin/python" -DPython3_EXECUTABLE="$PWD/.venv/bin/python"
+            .venv/bin/python -m pip install --no-build-isolation ".[test]"
