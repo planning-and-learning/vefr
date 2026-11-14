@@ -48,8 +48,8 @@ using Edge = vefr::Edge<Vertex>;
 using Weights = std::vector<double>;
 using Colors = std::optional<std::vector<vefr::Color>>;
 
-/// A visitor Python subclasses: each event a method, called by vefr's searches; a method returns None to go on, or
-/// Flow.STOP to stop the search.
+/// A visitor Python subclasses: each event a method, called by vefr's searches; a method returns None (or
+/// Flow.PROCEED) to go on, or Flow.STOP to stop the search.
 class Visitor
 {
 public:
@@ -60,20 +60,20 @@ public:
     Visitor& operator=(Visitor&&) noexcept = default;
     virtual ~Visitor() = default;
 
-    virtual vefr::Flow start_vertex(Vertex /*vertex*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow discover_vertex(Vertex /*vertex*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow examine_vertex(Vertex /*vertex*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow finish_vertex(Vertex /*vertex*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow examine_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow tree_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow non_tree_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow gray_target(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow black_target(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow back_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow forward_or_cross_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow finish_edge(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow edge_relaxed(const Edge& /*edge*/) { return vefr::Flow::proceed; }
-    virtual vefr::Flow edge_not_relaxed(const Edge& /*edge*/) { return vefr::Flow::proceed; }
+    virtual std::optional<vefr::Flow> start_vertex(Vertex /*vertex*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> discover_vertex(Vertex /*vertex*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> examine_vertex(Vertex /*vertex*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> finish_vertex(Vertex /*vertex*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> examine_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> tree_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> non_tree_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> gray_target(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> black_target(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> back_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> forward_or_cross_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> finish_edge(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> edge_relaxed(const Edge& /*edge*/) { return std::nullopt; }
+    virtual std::optional<vefr::Flow> edge_not_relaxed(const Edge& /*edge*/) { return std::nullopt; }
 };
 
 namespace detail
@@ -107,38 +107,26 @@ decltype(auto) with_visitor(Visitor* visitor, const F& search)
     return search(vefr::null_visitor {});
 }
 
-// NOLINTBEGIN(cppcoreguidelines-macro-usage): nanobind's trampoline is a macro; a Python event that returns None goes on
-/// NB_OVERRIDE, with a method's None read as Flow::proceed.
-#define VEFR_PYTHON_EVENT(NAME, X)                                            \
-    constexpr uint64_t nb_hash = nanobind::detail::str_hash(#NAME);           \
-    nanobind::detail::ticket nb_ticket(nb_trampoline, #NAME, nb_hash, false); \
-    if (!nb_ticket.key.is_valid())                                            \
-        return Visitor::NAME(X);                                              \
-    const auto answer = nb_trampoline.base().attr(nb_ticket.key)(X);          \
-    return answer.is_none() ? vefr::Flow::proceed : nb::cast<vefr::Flow>(answer)
-
 class PyVisitor : public Visitor
 {
 public:
     NB_TRAMPOLINE(Visitor);
 
-    vefr::Flow start_vertex(Vertex u) override { VEFR_PYTHON_EVENT(start_vertex, u); }
-    vefr::Flow discover_vertex(Vertex u) override { VEFR_PYTHON_EVENT(discover_vertex, u); }
-    vefr::Flow examine_vertex(Vertex u) override { VEFR_PYTHON_EVENT(examine_vertex, u); }
-    vefr::Flow finish_vertex(Vertex u) override { VEFR_PYTHON_EVENT(finish_vertex, u); }
-    vefr::Flow examine_edge(const Edge& e) override { VEFR_PYTHON_EVENT(examine_edge, e); }
-    vefr::Flow tree_edge(const Edge& e) override { VEFR_PYTHON_EVENT(tree_edge, e); }
-    vefr::Flow non_tree_edge(const Edge& e) override { VEFR_PYTHON_EVENT(non_tree_edge, e); }
-    vefr::Flow gray_target(const Edge& e) override { VEFR_PYTHON_EVENT(gray_target, e); }
-    vefr::Flow black_target(const Edge& e) override { VEFR_PYTHON_EVENT(black_target, e); }
-    vefr::Flow back_edge(const Edge& e) override { VEFR_PYTHON_EVENT(back_edge, e); }
-    vefr::Flow forward_or_cross_edge(const Edge& e) override { VEFR_PYTHON_EVENT(forward_or_cross_edge, e); }
-    vefr::Flow finish_edge(const Edge& e) override { VEFR_PYTHON_EVENT(finish_edge, e); }
-    vefr::Flow edge_relaxed(const Edge& e) override { VEFR_PYTHON_EVENT(edge_relaxed, e); }
-    vefr::Flow edge_not_relaxed(const Edge& e) override { VEFR_PYTHON_EVENT(edge_not_relaxed, e); }
+    std::optional<vefr::Flow> start_vertex(Vertex u) override { NB_OVERRIDE(start_vertex, u); }
+    std::optional<vefr::Flow> discover_vertex(Vertex u) override { NB_OVERRIDE(discover_vertex, u); }
+    std::optional<vefr::Flow> examine_vertex(Vertex u) override { NB_OVERRIDE(examine_vertex, u); }
+    std::optional<vefr::Flow> finish_vertex(Vertex u) override { NB_OVERRIDE(finish_vertex, u); }
+    std::optional<vefr::Flow> examine_edge(const Edge& e) override { NB_OVERRIDE(examine_edge, e); }
+    std::optional<vefr::Flow> tree_edge(const Edge& e) override { NB_OVERRIDE(tree_edge, e); }
+    std::optional<vefr::Flow> non_tree_edge(const Edge& e) override { NB_OVERRIDE(non_tree_edge, e); }
+    std::optional<vefr::Flow> gray_target(const Edge& e) override { NB_OVERRIDE(gray_target, e); }
+    std::optional<vefr::Flow> black_target(const Edge& e) override { NB_OVERRIDE(black_target, e); }
+    std::optional<vefr::Flow> back_edge(const Edge& e) override { NB_OVERRIDE(back_edge, e); }
+    std::optional<vefr::Flow> forward_or_cross_edge(const Edge& e) override { NB_OVERRIDE(forward_or_cross_edge, e); }
+    std::optional<vefr::Flow> finish_edge(const Edge& e) override { NB_OVERRIDE(finish_edge, e); }
+    std::optional<vefr::Flow> edge_relaxed(const Edge& e) override { NB_OVERRIDE(edge_relaxed, e); }
+    std::optional<vefr::Flow> edge_not_relaxed(const Edge& e) override { NB_OVERRIDE(edge_not_relaxed, e); }
 };
-#undef VEFR_PYTHON_EVENT
-// NOLINTEND(cppcoreguidelines-macro-usage)
 
 template<typename T>
 void bind_certificate(nb::module_& m, const char* name)

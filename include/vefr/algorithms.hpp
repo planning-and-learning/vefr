@@ -99,23 +99,26 @@ namespace detail
 {
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage): an event is called by its name, which a template cannot spell
-/// Calls visitor.NAME(x) where the visitor has that event: whether it asked to stop (it returned Flow::stop).
-#define VEFR_EVENT(NAME)                                                 \
-    template<typename Visitor, typename X>                               \
-    [[nodiscard]] bool NAME(Visitor& visitor, const X& x)                \
-    {                                                                    \
-        if constexpr (requires { visitor.NAME(x); })                     \
-        {                                                                \
-            if constexpr (std::same_as<decltype(visitor.NAME(x)), Flow>) \
-                return visitor.NAME(x) == Flow::stop;                    \
-            else                                                         \
-            {                                                            \
-                visitor.NAME(x);                                         \
-                return false;                                            \
-            }                                                            \
-        }                                                                \
-        else                                                             \
-            return false;                                                \
+/// Calls visitor.NAME(x) where the visitor has that event: whether it asked to stop (it returned what equals
+/// Flow::stop: a Flow, or a std::optional<Flow> whose empty answer goes on).
+#define VEFR_EVENT(NAME)                                                                      \
+    template<typename Visitor, typename X>                                                    \
+    [[nodiscard]] bool NAME(Visitor& visitor, const X& x)                                     \
+    {                                                                                         \
+        if constexpr (requires { visitor.NAME(x); })                                          \
+        {                                                                                     \
+            if constexpr (requires {                                                          \
+                              { visitor.NAME(x) == Flow::stop } -> std::convertible_to<bool>; \
+                          })                                                                  \
+                return visitor.NAME(x) == Flow::stop;                                         \
+            else                                                                              \
+            {                                                                                 \
+                visitor.NAME(x);                                                              \
+                return false;                                                                 \
+            }                                                                                 \
+        }                                                                                     \
+        else                                                                                  \
+            return false;                                                                     \
     }
 /// Every event, each by its name: what a search calls and a composite visitor forwards.
 #define VEFR_EVENTS(EVENT)       \
