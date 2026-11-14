@@ -34,6 +34,7 @@
 #include <urd/python/graphs.hpp>
 #include <urd/python/sequences/sequence.hpp>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace vefr::python
@@ -249,17 +250,20 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
         "The certificate and each vertex's stable color, by position.");
     m.def(
         "weisfeiler_leman",
-        [](const G& g, std::size_t k, const Colors& colors) -> nb::object
+        [](const G& g, std::size_t k, const Colors& colors)
         {
+            // One result type for both k, so that the stub names it: the certificate is Certificate2 or Certificate3.
+            using Result = std::pair<std::variant<vefr::Certificate<std::array<vefr::Color, 2>>, vefr::Certificate<std::array<vefr::Color, 3>>>,
+                                     decltype(vefr::weisfeiler_leman<2>(g, detail::coloring(g, colors)).colors)>;
             if (k == 2)
             {
                 auto result = vefr::weisfeiler_leman<2>(g, detail::coloring(g, colors));
-                return nb::cast(std::pair(std::move(result.certificate), result.colors));
+                return Result(std::move(result.certificate), std::move(result.colors));
             }
             if (k == 3)
             {
                 auto result = vefr::weisfeiler_leman<3>(g, detail::coloring(g, colors));
-                return nb::cast(std::pair(std::move(result.certificate), result.colors));
+                return Result(std::move(result.certificate), std::move(result.colors));
             }
             throw std::invalid_argument("k: 2 or 3");
         },

@@ -26,6 +26,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest",
+    "typing-extensions>=4.10",  # override, for Python 3.11
 ]
 
 [project.urls]

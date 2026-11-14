@@ -4,6 +4,7 @@
 import math
 
 import pytest
+from typing_extensions import override
 
 import pyvefr
 
@@ -92,8 +93,10 @@ def test_visitors_and_cycles() -> None:
             super().__init__()
             self.discovered: list[int] = []
 
-        def discover_vertex(self, vertex: int) -> None:
+        @override
+        def discover_vertex(self, vertex: int) -> pyvefr.Flow:
             self.discovered.append(vertex)
+            return pyvefr.Flow.PROCEED
 
     record = Record()
     pyvefr.depth_first_visit(g, [0], record)
@@ -112,7 +115,9 @@ def test_visitors_stop_searches_and_dijkstra_stops_at_targets() -> None:
     g = pyvefr.StaticGraph(pyvefr.Graph([(0, 1), (1, 2), (2, 3), (0, 3)]))
 
     class UntilTwo(pyvefr.Visitor):
-        def discover_vertex(self, vertex: int) -> pyvefr.Flow | None:
+        # None reads as Flow.PROCEED, which the stub's Flow does not say.
+        @override
+        def discover_vertex(self, vertex: int) -> pyvefr.Flow | None:  # pyright: ignore[reportIncompatibleMethodOverride]
             return pyvefr.Flow.STOP if vertex == 2 else None
 
     _, distances = pyvefr.breadth_first_search(g, [0], visitor=UntilTwo())
@@ -124,8 +129,10 @@ def test_visitors_stop_searches_and_dijkstra_stops_at_targets() -> None:
             super().__init__()
             self.order: list[int] = []
 
-        def examine_vertex(self, vertex: int) -> None:
+        @override
+        def examine_vertex(self, vertex: int) -> pyvefr.Flow:
             self.order.append(vertex)
+            return pyvefr.Flow.PROCEED
 
     # Edges keep the numbers they were given: 0->1, 1->2, 2->3, 0->3.
     settled = Settled()
