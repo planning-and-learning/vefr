@@ -1,24 +1,24 @@
 #include "vefr/algorithms.hpp"
 #include "vefr/dot.hpp"
-#include "vefr/reversed.hpp"
 #include "vefr/nauty.hpp"
 #include "vefr/properties.hpp"
 #include "vefr/refinement.hpp"
+#include "vefr/reversed.hpp"
 
 #include <array>
 #include <cmath>
-#include <string>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <limits>
 #include <optional>
 #include <ranges>
 #include <span>
+#include <string>
+#include <tuple>
 #include <urd/repr/graphs/adjacency_lists.hpp>
 #include <urd/repr/graphs/bit_rows.hpp>
 #include <urd/repr/graphs/csr_graph.hpp>
 #include <utility>
-#include <tuple>
 #include <vector>
 
 namespace
@@ -295,7 +295,8 @@ TEST(Dot, LabelsByData)
     const auto edges = std::vector<std::tuple<V, V, int>> { { 0, 1, 7 } };
     const auto names = std::vector<char> { 'a', 'b' };
     const auto g = Labeled(urd::graph_data<std::tuple<V, V, int>, char> { 2, edges, {}, names });
-    EXPECT_EQ(vefr::to_dot(g, vefr::vertex_data, vefr::edge_data), "digraph G {\n  rankdir=LR;\n  v0 [label=\"a\"];\n  v1 [label=\"b\"];\n  v0 -> v1 [label=\"7\"];\n}\n");
+    EXPECT_EQ(vefr::to_dot(g, vefr::vertex_data, vefr::edge_data),
+              "digraph G {\n  rankdir=LR;\n  v0 [label=\"a\"];\n  v1 [label=\"b\"];\n  v0 -> v1 [label=\"7\"];\n}\n");
 }
 
 TEST(Dot, LabelsAndEscapes)

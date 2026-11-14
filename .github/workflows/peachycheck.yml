@@ -25,7 +25,7 @@ jobs:
           prepare: |
             "$PYTHON" -m venv .venv
             .venv/bin/python -m pip install 'scikit-build-core>=1.0.3,<2' 'cmake>=3.21' 'ninja>=1.5' \
-              'nanobind-backend>=1.0' 'pybrokkr>=0.1.2,<0.2' 'pyurd>=0.1.2,<0.2'
+              'nanobind-backend>=1.0' 'pybrokkr>=0.1.3,<0.2' 'pyurd>=0.2.0,<0.3'
             PREFIX="$(.venv/bin/python -c 'import pyurd, pyurd_native; print(f"{pyurd.native_prefix()};{pyurd_native.native_prefix()}")')"
             cmake -S . -B build/peachycheck -G Ninja -DCMAKE_MAKE_PROGRAM="$PWD/.venv/bin/ninja" \
                   -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

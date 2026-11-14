@@ -109,7 +109,6 @@ decltype(auto) with_visitor(Visitor* visitor, const F& search)
 // NOLINTBEGIN(cppcoreguidelines-macro-usage): nanobind's trampoline is a macro; a Python event that returns None goes on
 /// NB_OVERRIDE, with a method's None read as Flow::proceed.
 #define VEFR_PYTHON_EVENT(NAME, X)                                            \
-    using nb_ret_type = vefr::Flow;                                           \
     constexpr uint64_t nb_hash = nanobind::detail::str_hash(#NAME);           \
     nanobind::detail::ticket nb_ticket(nb_trampoline, #NAME, nb_hash, false); \
     if (!nb_ticket.key.is_valid())                                            \

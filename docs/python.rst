@@ -39,8 +39,8 @@ Graphs
 
 Both have ``num_vertices``, ``num_edges``, ``vertices()``, ``neighbours(vertex)``, ``out_degree(vertex)``,
 ``adjacent(source, target)``, ``edges()``, ``out_edges(vertex)``, ``edge(source, target)``, ``source(edge)`` and
-``target(edge)``; edges are their numbers. ``vertex_value(vertex)`` and ``edge_value(edge)`` give a graph's data, ``None``
-where it carries none.
+``target(edge)``; edges are their numbers. ``vertex_value(vertex)`` and ``edge_value(edge)`` give a graph's data,
+``None`` where it carries none.
 
 .. py:class:: Edge
 

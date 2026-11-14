@@ -63,7 +63,8 @@ concept vertex_range = std::ranges::input_range<R> && std::convertible_to<std::r
 
 /// A weight per edge: a function of the edge (vefr::Edge), or of its number, which the graph must then give.
 template<typename F, typename G>
-concept edge_weight = (std::regular_invocable<const F&, const Edge<vertex_t<G>>&>) || (urd::incidence_graph<G> && std::regular_invocable<const F&, std::size_t>);
+concept edge_weight =
+    (std::regular_invocable<const F&, const Edge<vertex_t<G>>&>) || (urd::incidence_graph<G> && std::regular_invocable<const F&, std::size_t>);
 
 namespace detail
 {
