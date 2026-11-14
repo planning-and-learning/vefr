@@ -120,7 +120,7 @@ decltype(auto) with_visitor(Visitor* visitor, const F& search)
 class PyVisitor : public Visitor
 {
 public:
-    NB_TRAMPOLINE(Visitor, 14);
+    NB_TRAMPOLINE(Visitor);
 
     vefr::Flow start_vertex(Vertex u) override { VEFR_PYTHON_EVENT(start_vertex, u); }
     vefr::Flow discover_vertex(Vertex u) override { VEFR_PYTHON_EVENT(discover_vertex, u); }
