@@ -36,7 +36,7 @@ def test_graphs_grow_shrink_and_freeze() -> None:
     assert not g.adjacent(a, b)
     frozen = pyvefr.StaticGraph(g)
     assert frozen.in_neighbours(c) == [b]
-    assert pyvefr.is_loopless(frozen)
+    assert frozen.is_loopless()
 
 
 def test_certificates_and_canonical_forms() -> None:
@@ -44,45 +44,46 @@ def test_certificates_and_canonical_forms() -> None:
     shuffled = pyvefr.Graph(undirected(relabel(HEXAGON, SHUFFLE)))
     triangles = pyvefr.Graph(undirected(TWO_TRIANGLES))
 
-    assert pyvefr.color_refinement(hexagon)[0] == pyvefr.color_refinement(shuffled)[0]
-    assert pyvefr.color_refinement(hexagon)[0] == pyvefr.color_refinement(triangles)[0]
-    assert pyvefr.weisfeiler_leman(hexagon, 3)[0] != pyvefr.weisfeiler_leman(triangles, 3)[0]
-    assert len({pyvefr.weisfeiler_leman(hexagon, 3)[0], pyvefr.weisfeiler_leman(shuffled, 3)[0]}) == 1
+    assert hexagon.color_refinement()[0] == shuffled.color_refinement()[0]
+    assert hexagon.color_refinement()[0] == triangles.color_refinement()[0]
+    assert hexagon.weisfeiler_leman(3)[0] != triangles.weisfeiler_leman(3)[0]
+    assert len({hexagon.weisfeiler_leman(3)[0], shuffled.weisfeiler_leman(3)[0]}) == 1
 
-    lhs, rhs = pyvefr.canonical_form(hexagon), pyvefr.canonical_form(shuffled)
+    lhs, rhs = hexagon.canonical_form(), shuffled.canonical_form()
     assert lhs == rhs
     assert hash(lhs) == hash(rhs)
-    mapping = pyvefr.isomorphism(lhs, rhs)
-    assert mapping is not None
+    # the isomorphism the labelings give: a vertex to the vertex of the same canonical position
+    position = {p: i for i, p in enumerate(rhs.labeling)}
+    mapping = [position[p] for p in lhs.labeling]
     assert all(shuffled.adjacent(mapping[u], mapping[v]) for u, v in HEXAGON)
-    assert pyvefr.isomorphism(lhs, pyvefr.canonical_form(triangles)) is None
-    assert pyvefr.canonical_form(hexagon, [1, 0, 0, 0, 0, 0]) != pyvefr.canonical_form(hexagon)
+    assert lhs != triangles.canonical_form()
+    assert hexagon.canonical_form([1, 0, 0, 0, 0, 0]) != hexagon.canonical_form()
 
     with pytest.raises(ValueError, match="colors"):
-        pyvefr.canonical_form(hexagon, [0])
+        hexagon.canonical_form([0])
     with pytest.raises(ValueError, match="k"):
-        pyvefr.weisfeiler_leman(hexagon, 4)
+        hexagon.weisfeiler_leman(4)
 
 
 def test_searches_and_paths() -> None:
     g = pyvefr.StaticGraph(pyvefr.Graph([(0, 1), (1, 2), (0, 3), (3, 2)]))
-    predecessors, distances = pyvefr.breadth_first_search(g, [0])
+    predecessors, distances = g.breadth_first_search([0])
     assert predecessors[0] is None
     assert distances[2] == 2
-    assert pyvefr.topological_sort(g)[0] == 0
-    assert pyvefr.strong_components(g)[0] == 4
-    assert pyvefr.find_cycle(g) == []
+    assert g.topological_sort()[0] == 0
+    assert g.strong_components()[0] == 4
+    assert g.find_cycle() == []
 
     # Edges keep the numbers they were given: 0->1, 1->2, 0->3, 3->2.
     weights = [1.0, 1.0, 5.0, 1.0]
-    predecessors, distances = pyvefr.dijkstra_shortest_paths(g, [0], weights)
+    predecessors, distances = g.dijkstra_shortest_paths([0], weights)
     assert distances[2] == 2.0
     assert predecessors[2] == 1
-    matrix = pyvefr.floyd_warshall_all_pairs_shortest_paths(g, weights)
+    matrix = g.floyd_warshall_all_pairs_shortest_paths(weights)
     assert matrix[0][2] == 2.0
     assert math.isinf(matrix[2][0])
     with pytest.raises(ValueError, match="weights"):
-        pyvefr.dijkstra_shortest_paths(g, [0], [1.0])
+        g.dijkstra_shortest_paths([0], [1.0])
 
 
 def test_visitors_and_cycles() -> None:
@@ -98,16 +99,16 @@ def test_visitors_and_cycles() -> None:
             self.discovered.append(vertex)
 
     record = Record()
-    pyvefr.depth_first_visit(g, [0], record)
+    g.depth_first_visit([0], record)
     assert record.discovered == [0, 1, 2]
 
-    cycle = pyvefr.find_cycle(g)
+    cycle = g.find_cycle()
     assert len(cycle) == 3
     assert all(cycle[i].target == cycle[(i + 1) % 3].source for i in range(3))
 
     g.remove_vertex(1)
-    assert pyvefr.find_cycle(g) == []
-    assert pyvefr.breadth_first_search(g, [2])[1][1] is None
+    assert g.find_cycle() == []
+    assert g.breadth_first_search([2])[1][1] is None
 
 
 def test_visitors_stop_searches_and_dijkstra_stops_at_targets() -> None:
@@ -115,10 +116,10 @@ def test_visitors_stop_searches_and_dijkstra_stops_at_targets() -> None:
 
     class UntilTwo(pyvefr.Visitor):
         @override
-        def discover_vertex(self, vertex: int) -> pyvefr.Flow | None:
-            return pyvefr.Flow.STOP if vertex == 2 else None
+        def discover_vertex(self, vertex: int) -> pyvefr.ControlFlow | None:
+            return pyvefr.ControlFlow.STOP if vertex == 2 else None
 
-    _, distances = pyvefr.breadth_first_search(g, [0], visitor=UntilTwo())
+    _, distances = g.breadth_first_search([0], visitor=UntilTwo())
     assert distances[2] == 2
     assert distances[3] == 1  # found from 0 before 2 was
 
@@ -133,6 +134,6 @@ def test_visitors_stop_searches_and_dijkstra_stops_at_targets() -> None:
 
     # Edges keep the numbers they were given: 0->1, 1->2, 2->3, 0->3.
     settled = Settled()
-    _, distances = pyvefr.dijkstra_shortest_paths(g, [0], [1.0, 1.0, 1.0, 10.0], visitor=settled, targets=[2])
+    _, distances = g.dijkstra_shortest_paths([0], [1.0, 1.0, 1.0, 10.0], visitor=settled, targets=[2])
     assert distances[2] == 2.0
     assert settled.order == [0, 1, 2]

@@ -84,7 +84,7 @@ using weight_t = std::remove_cvref_t<decltype(detail::weigh<G>(std::declval<cons
 // Visitors -------------------------------------------------------------------------------------------------------------
 
 /// What an event may answer: go on, or stop the search where it is.
-enum class Flow : std::uint8_t
+enum class ControlFlow : std::uint8_t
 {
     proceed,
     stop,
@@ -100,25 +100,25 @@ namespace detail
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage): an event is called by its name, which a template cannot spell
 /// Calls visitor.NAME(x) where the visitor has that event: whether it asked to stop (it returned what equals
-/// Flow::stop: a Flow, or a std::optional<Flow> whose empty answer goes on).
-#define VEFR_EVENT(NAME)                                                                      \
-    template<typename Visitor, typename X>                                                    \
-    [[nodiscard]] bool NAME(Visitor& visitor, const X& x)                                     \
-    {                                                                                         \
-        if constexpr (requires { visitor.NAME(x); })                                          \
-        {                                                                                     \
-            if constexpr (requires {                                                          \
-                              { visitor.NAME(x) == Flow::stop } -> std::convertible_to<bool>; \
-                          })                                                                  \
-                return visitor.NAME(x) == Flow::stop;                                         \
-            else                                                                              \
-            {                                                                                 \
-                visitor.NAME(x);                                                              \
-                return false;                                                                 \
-            }                                                                                 \
-        }                                                                                     \
-        else                                                                                  \
-            return false;                                                                     \
+/// ControlFlow::stop: a ControlFlow, or a std::optional<ControlFlow> whose empty answer goes on).
+#define VEFR_EVENT(NAME)                                                                             \
+    template<typename Visitor, typename X>                                                           \
+    [[nodiscard]] bool NAME(Visitor& visitor, const X& x)                                            \
+    {                                                                                                \
+        if constexpr (requires { visitor.NAME(x); })                                                 \
+        {                                                                                            \
+            if constexpr (requires {                                                                 \
+                              { visitor.NAME(x) == ControlFlow::stop } -> std::convertible_to<bool>; \
+                          })                                                                         \
+                return visitor.NAME(x) == ControlFlow::stop;                                         \
+            else                                                                                     \
+            {                                                                                        \
+                visitor.NAME(x);                                                                     \
+                return false;                                                                        \
+            }                                                                                        \
+        }                                                                                            \
+        else                                                                                         \
+            return false;                                                                            \
     }
 /// Every event, each by its name: what a search calls and a composite visitor forwards.
 #define VEFR_EVENTS(EVENT)       \
@@ -151,11 +151,11 @@ public:
 
 #define VEFR_FORWARD(NAME)                                                                         \
     template<typename X>                                                                           \
-    Flow NAME(const X& x)                                                                          \
+    ControlFlow NAME(const X& x)                                                                   \
     {                                                                                              \
         auto stop = false;                                                                         \
         std::apply([&](auto&... each) { ((stop = detail::NAME(each, x) || stop), ...); }, m_each); \
-        return stop ? Flow::stop : Flow::proceed;                                                  \
+        return stop ? ControlFlow::stop : ControlFlow::proceed;                                    \
     }
     VEFR_EVENTS(VEFR_FORWARD)
 #undef VEFR_FORWARD
@@ -180,10 +180,10 @@ public:
             m_remaining.insert(t);
     }
 
-    Flow examine_vertex(V v)
+    ControlFlow examine_vertex(V v)
     {
         m_remaining.erase(v);
-        return m_remaining.empty() ? Flow::stop : Flow::proceed;
+        return m_remaining.empty() ? ControlFlow::stop : ControlFlow::proceed;
     }
 
 private:
@@ -433,13 +433,13 @@ auto find_cycle(const G& g)
         VertexMap<Edge<V>, V> entered_by;
         urd::Store<urd::sequence<Edge<V>>> cycle;
         void tree_edge(const Edge<V>& e) { entered_by[e.target] = e; }
-        Flow back_edge(const Edge<V>& e)
+        ControlFlow back_edge(const Edge<V>& e)
         {
             cycle.push_back(e);
             for (auto v = e.source; v != e.target; v = entered_by[v].source)
                 cycle.push_back(entered_by[v]);
             std::ranges::reverse(cycle);
-            return Flow::stop;  // one cycle is enough
+            return ControlFlow::stop;  // one cycle is enough
         }
     } record { vertex_map<Edge<V>>(g), {} };
     depth_first_visit(g, g.vertices(), record);

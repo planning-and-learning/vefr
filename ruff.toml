@@ -41,6 +41,8 @@ ban-relative-imports = "all"
 "python/src/pyvefr/__init__.py" = ["E402"]
 # Command-line entry points and scripts print their output.
 "{python/src/pyvefr/__main__.py,profiling/**,experiments/**,python/examples/**,tests/fixtures/**}" = ["T201"]
+# Examples assert the outcomes they show, on the values they print.
+"python/examples/**" = ["S101", "PLR2004"]
 # Standalone scripts, run by path or by the build frontend, not packages.
 "{profiling/**,experiments/**,python/examples/**,python/pyvefr_build_backend.py}" = ["INP001"]
 

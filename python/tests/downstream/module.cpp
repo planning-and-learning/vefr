@@ -1,5 +1,4 @@
-// A downstream module as a library built on vefr writes one: its own graph class, bound with one call, after which
-// pyvefr's functions take it.
+// A downstream module as a library built on vefr writes one: its own graph class, vefr's algorithms as its methods.
 
 #include <cstdint>
 #include <nanobind/nanobind.h>
@@ -27,6 +26,7 @@ NB_MODULE(_pyvefr_downstream_test, m)
 {
     namespace nb = nanobind;
     using namespace nb::literals;
+    nb::module_::import_("pyvefr");  // the types every graph shares: Edge, Visitor, the certificates
     auto cls = nb::class_<NamedGraph>(std::move(m), "NamedGraph");
     cls.def(
         "__init__",
@@ -35,5 +35,7 @@ NB_MODULE(_pyvefr_downstream_test, m)
         "edges"_a,
         "names"_a);
     urd::python::bind_graph(cls);
-    vefr::python::bind_algorithms(cls, vefr::vertex_data, vefr::unlabeled);
+    // Colored by what a vertex holds, not by its number: here its name's length.
+    const auto name_length = [](const NamedGraph& g, std::uint32_t v) { return static_cast<vefr::Color>(g.vertex_value(v).size()); };
+    vefr::python::bind_algorithms(cls, name_length, vefr::vertex_data, vefr::unlabeled);
 }

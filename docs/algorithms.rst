@@ -61,9 +61,9 @@ Visitors
 --------
 
 A visitor is any object with the events it wants, each taking a vertex or an :cpp:struct:`Edge`. Events it does not have
-are not called. An event may return :cpp:enum:`Flow`: ``Flow::stop`` ends the search where it is.
+are not called. An event may return :cpp:enum:`ControlFlow`: ``ControlFlow::stop`` ends the search where it is.
 
-.. cpp:enum-class:: Flow
+.. cpp:enum-class:: ControlFlow
 
    .. cpp:enumerator:: proceed
    .. cpp:enumerator:: stop

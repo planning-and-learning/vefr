@@ -195,7 +195,7 @@ TEST(Algorithms, VisitorsStopSearches)
     const auto g = make({ { 0, 1 }, { 1, 2 }, { 2, 3 } });
     struct
     {
-        [[nodiscard]] vefr::Flow discover_vertex(V v) const { return v == 2 ? vefr::Flow::stop : vefr::Flow::proceed; }
+        [[nodiscard]] vefr::ControlFlow discover_vertex(V v) const { return v == 2 ? vefr::ControlFlow::stop : vefr::ControlFlow::proceed; }
     } until_two;
     const auto bfs = vefr::breadth_first_search(g, std::vector<V> { 0 }, until_two);
     EXPECT_EQ(bfs.distances[2], 2U);
