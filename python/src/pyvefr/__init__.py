@@ -5,6 +5,7 @@
 
 from importlib import import_module as _import_module
 from pathlib import Path
+from typing import Protocol
 
 # The native libraries vefr links (nauty, Boost.Graph) come with pyurd_native: load them before the extension.
 _import_module("pyurd_native")
@@ -37,6 +38,18 @@ from pyvefr._pyvefr import (
     topological_sort as topological_sort,
     weisfeiler_leman as weisfeiler_leman,
 )
+
+
+class GraphLike(Protocol):
+    """What the algorithms take: a graph urd binds, pyvefr's own or a downstream package's.
+
+    vefr::python::bind_algorithms adds a downstream graph's overloads; a graph without them raises TypeError.
+    """
+
+    @property
+    def num_vertices(self) -> int:
+        """The number of vertices."""
+        ...
 
 
 def native_prefix() -> Path:

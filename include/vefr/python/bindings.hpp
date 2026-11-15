@@ -40,6 +40,41 @@
 namespace vefr::python
 {
 
+/// An algorithm's graph argument: G's object, which the stubs name pyvefr.GraphLike, the Protocol every graph urd binds
+/// satisfies. pyvefr's stubs list overloads only for its own graphs; so a downstream graph type-checks too.
+template<typename G>
+struct GraphLike
+{
+    const G* graph = nullptr;
+
+    const G& operator*() const { return *graph; }
+};
+
+}  // namespace vefr::python
+
+namespace nanobind::detail
+{
+
+template<typename G>
+struct type_caster<vefr::python::GraphLike<G>>
+{
+    NB_TYPE_CASTER(vefr::python::GraphLike<G>, const_name("pyvefr.GraphLike"))
+
+    bool from_python(handle src, uint32_t flags, cleanup_list* cleanup) noexcept
+    {
+        make_caster<G> caster;
+        if (!caster.from_python(src, flags, cleanup))
+            return false;
+        value.graph = static_cast<G*>(caster);  // None casts to nullptr: no graph
+        return value.graph != nullptr;
+    }
+};
+
+}  // namespace nanobind::detail
+
+namespace vefr::python
+{
+
 namespace nb = nanobind;
 
 /// A vertex as Python sees it: its index (Python's visitor and Edge are written for it).
@@ -221,16 +256,16 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
 
     cls.def("__str__", [vertex_label, edge_label](const G& g) { return vefr::to_dot(g, vertex_label, edge_label); });
     auto& m = algorithms;
-    m.def("is_loopless", [](const G& g) { return vefr::is_loopless(g); }, "graph"_a);
-    m.def("is_multigraph", [](const G& g) { return vefr::is_multigraph(g); }, "graph"_a);
-    m.def("is_symmetric", [](const G& g) { return vefr::is_symmetric(g); }, "graph"_a);
-    m.def("is_simple_undirected", [](const G& g) { return vefr::is_simple_undirected(g); }, "graph"_a);
+    m.def("is_loopless", [](GraphLike<G> g) { return vefr::is_loopless(*g); }, "graph"_a);
+    m.def("is_multigraph", [](GraphLike<G> g) { return vefr::is_multigraph(*g); }, "graph"_a);
+    m.def("is_symmetric", [](GraphLike<G> g) { return vefr::is_symmetric(*g); }, "graph"_a);
+    m.def("is_simple_undirected", [](GraphLike<G> g) { return vefr::is_simple_undirected(*g); }, "graph"_a);
 
     m.def(
         "color_refinement",
-        [](const G& g, const Colors& colors)
+        [](GraphLike<G> g, const Colors& colors)
         {
-            auto result = vefr::color_refinement(g, detail::coloring(g, colors));
+            auto result = vefr::color_refinement(*g, detail::coloring(*g, colors));
             return std::pair(std::move(result.certificate), result.colors);
         },
         "graph"_a,
@@ -238,19 +273,19 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
         "The certificate and each vertex's stable color, by position.");
     m.def(
         "weisfeiler_leman",
-        [](const G& g, std::size_t k, const Colors& colors)
+        [](GraphLike<G> g, std::size_t k, const Colors& colors)
         {
             // One result type for both k, so that the stub names it: the certificate is Certificate2 or Certificate3.
             using Result = std::pair<std::variant<vefr::Certificate<std::array<vefr::Color, 2>>, vefr::Certificate<std::array<vefr::Color, 3>>>,
-                                     decltype(vefr::weisfeiler_leman<2>(g, detail::coloring(g, colors)).colors)>;
+                                     decltype(vefr::weisfeiler_leman<2>(*g, detail::coloring(*g, colors)).colors)>;
             if (k == 2)
             {
-                auto result = vefr::weisfeiler_leman<2>(g, detail::coloring(g, colors));
+                auto result = vefr::weisfeiler_leman<2>(*g, detail::coloring(*g, colors));
                 return Result(std::move(result.certificate), std::move(result.colors));
             }
             if (k == 3)
             {
-                auto result = vefr::weisfeiler_leman<3>(g, detail::coloring(g, colors));
+                auto result = vefr::weisfeiler_leman<3>(*g, detail::coloring(*g, colors));
                 return Result(std::move(result.certificate), std::move(result.colors));
             }
             throw std::invalid_argument("k: 2 or 3");
@@ -261,23 +296,23 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
         "The certificate and each k-tuple's stable color.");
     m.def(
         "canonical_form",
-        [](const G& g, const Colors& colors) { return vefr::canonical_form(g, detail::coloring(g, colors)); },
+        [](GraphLike<G> g, const Colors& colors) { return vefr::canonical_form(*g, detail::coloring(*g, colors)); },
         "graph"_a,
         "colors"_a = nb::none());
 
     m.def(
         "strong_components",
-        [](const G& g)
+        [](GraphLike<G> g)
         {
-            auto result = vefr::strong_components(g);
+            auto result = vefr::strong_components(*g);
             return std::pair(result.count, result.component);
         },
         "graph"_a);
     m.def(
         "breadth_first_search",
-        [](const G& g, const Vertices& sources, Visitor* visitor)
+        [](GraphLike<G> g, const Vertices& sources, Visitor* visitor)
         {
-            auto result = detail::with_visitor(visitor, [&](auto&& each) { return vefr::breadth_first_search(g, sources, each); });
+            auto result = detail::with_visitor(visitor, [&](auto&& each) { return vefr::breadth_first_search(*g, sources, each); });
             return std::pair(result.predecessors, result.distances);
         },
         "graph"_a,
@@ -285,38 +320,38 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
         "visitor"_a = nb::none());
     m.def(
         "depth_first_search",
-        [](const G& g, const Vertices& sources, Visitor* visitor)
-        { return detail::with_visitor(visitor, [&](auto&& each) { return vefr::depth_first_search(g, sources, each); }); },
+        [](GraphLike<G> g, const Vertices& sources, Visitor* visitor)
+        { return detail::with_visitor(visitor, [&](auto&& each) { return vefr::depth_first_search(*g, sources, each); }); },
         "graph"_a,
         "sources"_a,
         "visitor"_a = nb::none());
     m.def(
         "breadth_first_visit",
-        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::breadth_first_visit(g, sources, visitor); },
+        [](GraphLike<G> g, const Vertices& sources, Visitor& visitor) { vefr::breadth_first_visit(*g, sources, visitor); },
         "graph"_a,
         "sources"_a,
         "visitor"_a);
     m.def(
         "depth_first_visit",
-        [](const G& g, const Vertices& sources, Visitor& visitor) { vefr::depth_first_visit(g, sources, visitor); },
+        [](GraphLike<G> g, const Vertices& sources, Visitor& visitor) { vefr::depth_first_visit(*g, sources, visitor); },
         "graph"_a,
         "sources"_a,
         "visitor"_a);
-    m.def("topological_sort", [](const G& g) { return vefr::topological_sort(g); }, "graph"_a);
-    m.def("find_cycle", [](const G& g) { return vefr::find_cycle(g); }, "graph"_a);
+    m.def("topological_sort", [](GraphLike<G> g) { return vefr::topological_sort(*g); }, "graph"_a);
+    m.def("find_cycle", [](GraphLike<G> g) { return vefr::find_cycle(*g); }, "graph"_a);
 
     if constexpr (urd::incidence_graph<G> && urd::edge_list_graph<G>)
     {
         m.def(
             "dijkstra_shortest_paths",
-            [](const G& g, const Vertices& sources, const Weights& weights, Visitor* visitor, const std::optional<Vertices>& targets)
+            [](GraphLike<G> g, const Vertices& sources, const Weights& weights, Visitor* visitor, const std::optional<Vertices>& targets)
             {
-                const auto weight = detail::weighing(g, weights);
+                const auto weight = detail::weighing(*g, weights);
                 const auto search = [&](auto&& each)
                 {
                     if (targets)
-                        return vefr::dijkstra_shortest_paths(g, sources, weight, vefr::visitors(each, vefr::stop_at(*targets)));
-                    return vefr::dijkstra_shortest_paths(g, sources, weight, each);
+                        return vefr::dijkstra_shortest_paths(*g, sources, weight, vefr::visitors(each, vefr::stop_at(*targets)));
+                    return vefr::dijkstra_shortest_paths(*g, sources, weight, each);
                 };
                 auto result = detail::with_visitor(visitor, search);
                 return std::pair(result.predecessors, result.distances);
@@ -329,7 +364,7 @@ void bind_algorithms(nb::module_& algorithms, nb::class_<G>& cls, VL vertex_labe
             "With targets, it stops once their distances are final.");
         m.def(
             "floyd_warshall_all_pairs_shortest_paths",
-            [](const G& g, const Weights& weights) { return vefr::floyd_warshall_all_pairs_shortest_paths(g, detail::weighing(g, weights)); },
+            [](GraphLike<G> g, const Weights& weights) { return vefr::floyd_warshall_all_pairs_shortest_paths(*g, detail::weighing(*g, weights)); },
             "graph"_a,
             "weights"_a);
     }

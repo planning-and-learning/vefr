@@ -114,7 +114,8 @@ Binding a graph of one's own
 A library built on vefr binds its graph class (an urd graph) with two calls: urd binds the graph's members
 (``urd::python::bind_graph``, ``urd/python/graphs.hpp``), vefr its algorithms and the class's DOT text
 (``vefr::python::bind_algorithms``, ``vefr/python/bindings.hpp``). pyvefr's functions then take the class as they take
-pyvefr's own graphs.
+pyvefr's own graphs. Their stubs type the graph as ``pyvefr.GraphLike``, a Protocol every class urd binds satisfies, so
+pyright accepts the class too.
 
 .. code-block:: cpp
 
