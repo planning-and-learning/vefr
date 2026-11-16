@@ -1,5 +1,4 @@
 #include "vefr/algorithms.hpp"
-#include "vefr/dot.hpp"
 #include "vefr/nauty.hpp"
 #include "vefr/properties.hpp"
 #include "vefr/refinement.hpp"
@@ -13,7 +12,6 @@
 #include <optional>
 #include <ranges>
 #include <span>
-#include <string>
 #include <tuple>
 #include <urd/repr/graphs/adjacency_lists.hpp>
 #include <urd/repr/graphs/bit_rows.hpp>
@@ -287,24 +285,4 @@ TEST(Reversed, SearchesAgainstTheEdges)
         EXPECT_EQ(back.source(e), 2U);
         EXPECT_EQ(g.target(e), 2U);  // the same number as the edge it turns around
     }
-}
-
-TEST(Dot, LabelsByData)
-{
-    using Labeled = urd::Store<urd::graph<V, int, char>, urd::frozen>;
-    const auto edges = std::vector<std::tuple<V, V, int>> { { 0, 1, 7 } };
-    const auto names = std::vector<char> { 'a', 'b' };
-    const auto g = Labeled(urd::graph_data<std::tuple<V, V, int>, char> { 2, edges, {}, names });
-    EXPECT_EQ(vefr::to_dot(g, vefr::vertex_data, vefr::edge_data),
-              "digraph G {\n  rankdir=LR;\n  v0 [label=\"a\"];\n  v1 [label=\"b\"];\n  v0 -> v1 [label=\"7\"];\n}\n");
-}
-
-TEST(Dot, LabelsAndEscapes)
-{
-    const auto g = make({ { 0, 1 } });
-    const auto text = vefr::to_dot(
-        g,
-        [](const auto&, V v) { return v == 0 ? std::string("say \"hi\"") : std::string(); },
-        [](const auto&, const vefr::Edge<V>& e) { return e.id; });
-    EXPECT_EQ(text, "digraph G {\n  rankdir=LR;\n  v0 [label=\"say \\\"hi\\\"\"];\n  v1;\n  v0 -> v1 [label=\"0\"];\n}\n");
 }

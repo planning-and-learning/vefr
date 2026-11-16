@@ -125,7 +125,7 @@ A library built on vefr binds its graph class (an urd graph) with two calls: urd
 (``vefr::python::bind_algorithms``, ``vefr/python/bindings.hpp``) as methods of the class, so its generated stub lists
 them. ``bind_algorithms`` binds every algorithm the graph takes; one binder each (``bind_find_cycle``,
 ``bind_breadth_first_search``, ...) binds a choice of them. Its vertex coloring, a function of the graph and a vertex
-whose result is an integer, an enum or an urd index (``vefr::vertex_data`` where the vertex data is one), colors the
+whose result is an integer, an enum or an urd index (``urd::vertex_data`` where the vertex data is one), colors the
 refinements and canonical forms where Python gives no colors: by what a vertex holds, never by its number.
 ``bind_weisfeiler_leman<2, 3, 4>(cls, coloring)`` binds the k a graph needs; a k beyond 3 needs its certificate,
 ``bind_certificate<4>(m)``, in one module. The module imports pyvefr first, which registers the types
@@ -136,4 +136,4 @@ every graph shares (``Edge``, ``Visitor``, the certificates).
    nb::module_::import_("pyvefr");
    auto cls = nb::class_<MyGraph>(m, "MyGraph");  // MyGraph: an urd graph, its labels as its data
    urd::python::bind_graph(cls);
-   vefr::python::bind_algorithms(cls, vefr::python::one_color, vefr::vertex_data, vefr::edge_data);
+   vefr::python::bind_algorithms(cls, vefr::python::one_color, urd::vertex_data, urd::edge_data);

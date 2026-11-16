@@ -121,7 +121,7 @@ void bind(nb::module_& m)
         .def("remove_vertex", &Graph::remove_vertex, "vertex"_a)
         .def("clear", &Graph::clear);
     urd::python::bind_graph(graph);
-    vefr::python::bind_algorithms(graph, vefr::python::one_color, vefr::unlabeled, vefr::unlabeled);
+    vefr::python::bind_algorithms(graph, vefr::python::one_color, urd::unlabeled, urd::unlabeled);
 
     auto static_graph = nb::class_<StaticGraph>(m, "StaticGraph", "A graph built once; edges keep their numbers, in-edges kept.");
     static_graph.def(
@@ -130,7 +130,7 @@ void bind(nb::module_& m)
                     "graph"_a)
         .def("__init__", [](StaticGraph* self, const Pairs& edges) { new (self) StaticGraph(edges.begin(), edges.end()); }, "edges"_a);
     urd::python::bind_graph(static_graph);
-    vefr::python::bind_algorithms(static_graph, vefr::python::one_color, vefr::unlabeled, vefr::unlabeled);
+    vefr::python::bind_algorithms(static_graph, vefr::python::one_color, urd::unlabeled, urd::unlabeled);
 }
 
 }  // namespace pyvefr

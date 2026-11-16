@@ -9,7 +9,6 @@
 // pyvefr.Edge.
 
 #include "vefr/algorithms.hpp"
-#include "vefr/dot.hpp"
 #include "vefr/nauty.hpp"
 #include "vefr/properties.hpp"
 #include "vefr/refinement.hpp"
@@ -32,6 +31,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <urd/dot.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/elements/requirements.hpp>
 #include <urd/python/graphs.hpp>
@@ -167,7 +167,7 @@ template<typename G>
 concept python_graph = urd::graph_like<G> && std::same_as<vertex_t<G>, Vertex>;
 
 /// What colors a vertex where Python gives no colors: a function of the graph and a vertex, as to_dot's labels are,
-/// whose result is a color (an integer, an enum or an urd index; vefr::color_of). vefr::vertex_data colors by the
+/// whose result is a color (an integer, an enum or an urd index; vefr::color_of). urd::vertex_data colors by the
 /// vertex's data where that is one. It answers by what a vertex is, not by its number, so that isomorphic graphs color
 /// alike.
 template<typename VC, typename G>
@@ -180,11 +180,11 @@ inline constexpr auto one_color = [](const auto& /*graph*/, const auto& /*vertex
 // Each binder adds one algorithm as a method of the graph's class; urd binds its graph members
 // (urd::python::bind_graph). Values pass through nanobind's casters (urd's for sequences and views).
 
-/// __str__: the graph's DOT text, labelled by vertex_label and edge_label (vefr::to_dot).
+/// __str__: the graph's DOT text, labelled by vertex_label and edge_label (urd::to_dot).
 template<python_graph G, typename VL, typename EL>
 void bind_dot(nb::class_<G>& cls, VL vertex_label, EL edge_label)
 {
-    cls.def("__str__", [vertex_label, edge_label](const G& g) { return vefr::to_dot(g, vertex_label, edge_label); });
+    cls.def("__str__", [vertex_label, edge_label](const G& g) { return urd::to_dot(g, vertex_label, edge_label); });
 }
 
 template<python_graph G>

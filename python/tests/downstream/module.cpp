@@ -37,5 +37,5 @@ NB_MODULE(_pyvefr_downstream_test, m)
     urd::python::bind_graph(cls);
     // Colored by what a vertex holds, not by its number: here its name's length.
     const auto name_length = [](const NamedGraph& g, std::uint32_t v) { return static_cast<vefr::Color>(g.vertex_value(v).size()); };
-    vefr::python::bind_algorithms(cls, name_length, vefr::vertex_data, vefr::unlabeled);
+    vefr::python::bind_algorithms(cls, name_length, urd::vertex_data, urd::unlabeled);
 }

@@ -25,29 +25,9 @@
 namespace vefr
 {
 
-/// An edge as the algorithms hand it out: its endpoints and its number (`none` where the graph numbers no edges).
-template<typename V>
-struct Edge
-{
-    static constexpr auto none = std::numeric_limits<std::size_t>::max();
-
-    V source {};
-    V target {};
-    std::size_t id = none;
-
-    friend bool operator==(const Edge&, const Edge&) = default;
-};
-
-/// The edges leaving `u`, as Edge: from their numbers in an incidence graph, else from its neighbours.
-template<urd::adjacency_graph G>
-[[nodiscard]] auto out_edges_of(const G& g, vertex_t<G> u)
-{
-    using V = vertex_t<G>;
-    if constexpr (urd::incidence_graph<G>)
-        return g.out_edges(u) | std::views::transform([u, g = &g](std::size_t e) { return Edge<V> { u, g->target(e), e }; });
-    else
-        return g.neighbours(u) | std::views::transform([u](V v) { return Edge<V> { u, v }; });
-}
+/// An edge as the algorithms hand it out, and the edges leaving a vertex: urd's (urd/graphs.hpp).
+using urd::Edge;
+using urd::out_edges_of;
 
 /// Data per vertex, keyed by vertex: sized one past the largest vertex index, so removed vertices leave holes.
 template<typename T, typename V>
