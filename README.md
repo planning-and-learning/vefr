@@ -31,7 +31,7 @@ pyvefr binds them for a growing `Graph` and a frozen `StaticGraph`.
 ## Build
 
 ```console
-python -m pip install 'pyurd>=0.2.0,<0.3' pybrokkr
+python -m pip install 'pyurd>=0.3.0,<0.4' pybrokkr
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DVEFR_BUILD_TESTS=ON \
       -DCMAKE_PREFIX_PATH="$(python -c 'import pyurd, pyurd_native; print(f"{pyurd.native_prefix()};{pyurd_native.native_prefix()}")')"
 cmake --build build -j4
