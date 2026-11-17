@@ -53,8 +53,11 @@ Pairs relabel(const Pairs& edges, const std::vector<V>& to)
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers): the graphs are their numbers
 Pairs hexagon_edges() { return undirected({ { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 5, 0 } }); }
+
 Pairs two_triangles_edges() { return undirected({ { 0, 1 }, { 1, 2 }, { 2, 0 }, { 3, 4 }, { 4, 5 }, { 5, 3 } }); }
+
 std::vector<V> shuffle() { return { 3, 5, 0, 4, 1, 2 }; }
+
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 constexpr auto last_of_hexagon = V { 5 };  // NOLINT(cppcoreguidelines-avoid-magic-numbers)
@@ -163,11 +166,14 @@ TEST(Algorithms, DijkstraStopsAtItsTargets)
     const auto g = make({ { 0, 1 }, { 1, 2 }, { 2, 3 }, { 0, 3 } });
     constexpr auto detour = 10.0;
     const auto unit = [](const vefr::Edge<V>& e) { return e.source + 1 == e.target ? 1.0 : detour; };  // a weight by edge
+
     struct
     {
         std::vector<V> settled;
+
         void examine_vertex(V v) { settled.push_back(v); }
     } record;
+
     const auto paths = vefr::dijkstra_shortest_paths(g, std::vector<V> { 0 }, unit, vefr::visitors(record, vefr::stop_at(std::vector<V> { 2 })));
     EXPECT_EQ(paths.distances[2], 2.0);
     EXPECT_EQ(vefr::path_to(paths, V { 2 }), (urd::Store<urd::sequence<V>> { 0, 1, 2 }));
@@ -191,10 +197,12 @@ TEST(Algorithms, DijkstraReusesItsPaths)
 TEST(Algorithms, VisitorsStopSearches)
 {
     const auto g = make({ { 0, 1 }, { 1, 2 }, { 2, 3 } });
+
     struct
     {
         [[nodiscard]] vefr::ControlFlow discover_vertex(V v) const { return v == 2 ? vefr::ControlFlow::stop : vefr::ControlFlow::proceed; }
     } until_two;
+
     const auto bfs = vefr::breadth_first_search(g, std::vector<V> { 0 }, until_two);
     EXPECT_EQ(bfs.distances[2], 2U);
     EXPECT_EQ(bfs.distances[3], std::nullopt);
@@ -213,11 +221,14 @@ TEST(Algorithms, SourcesAreAnyRange)
 TEST(Algorithms, VisitorsHaveTheEventsTheyWant)
 {
     const auto g = make({ { 0, 1 }, { 1, 2 }, { 0, 2 } });
+
     struct
     {
         std::vector<V> discovered;
+
         void discover_vertex(V v) { discovered.push_back(v); }
     } breadth, depth;
+
     vefr::breadth_first_visit(g, std::vector<V> { 0 }, breadth);
     EXPECT_EQ(breadth.discovered, (std::vector<V> { 0, 1, 2 }));
     vefr::depth_first_visit(g, std::vector<V> { 0 }, depth);

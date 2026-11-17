@@ -78,7 +78,9 @@ public:
     }
 
     [[nodiscard]] std::size_t size() const noexcept { return m_vertices.size(); }
+
     [[nodiscard]] std::size_t of(vertex_t<G> v) const { return m_position[index(v)]; }
+
     [[nodiscard]] vertex_t<G> at(std::size_t position) const { return m_vertices[position]; }
 
 private:

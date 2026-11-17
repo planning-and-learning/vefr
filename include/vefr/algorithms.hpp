@@ -143,8 +143,10 @@ public:
 private:
     std::tuple<Visitors...> m_each;
 };
+
 template<typename... Visitors>
 visitors(Visitors&&...) -> visitors<Visitors...>;
+
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 /// Stops a search once it has examined every vertex of `targets` (taken off its queue: in breadth-first search and
@@ -169,6 +171,7 @@ public:
 private:
     urd::Store<urd::set<V>> m_remaining;
 };
+
 template<std::ranges::input_range R>
 stop_at(R&&) -> stop_at<std::remove_cvref_t<std::ranges::range_value_t<R>>>;
 
@@ -251,6 +254,7 @@ template<urd::adjacency_graph G, vertex_range<G> R, typename Visitor>
 void depth_first_visit(const G& g, R&& sources, Visitor&& visitor)  // NOLINT(cppcoreguidelines-missing-std-forward): called, not passed on
 {
     using V = vertex_t<G>;
+
     struct Frame
     {
         V vertex;
@@ -258,6 +262,7 @@ void depth_first_visit(const G& g, R&& sources, Visitor&& visitor)  // NOLINT(cp
         std::size_t end;
         std::optional<Edge<V>> entered_by;
     };
+
     auto marks = vertex_map(g, detail::Mark::white);
     auto edges = urd::Store<urd::sequence<Edge<V>>>();  // the out-edges of the vertices on the path, frame after frame
     auto path = urd::Store<urd::sequence<Frame>>();
@@ -326,20 +331,24 @@ auto breadth_first_search(const G& g, R&& sources, Visitor&& visitor = {})
     using V = vertex_t<G>;
     using Result = Paths<V, std::optional<std::size_t>>;
     auto result = Result { vertex_map<std::optional<V>>(g), vertex_map<std::optional<std::size_t>>(g) };
+
     struct Record
     {
         Result* paths;
+
         void discover_vertex(V v) const
         {
             if (!paths->distances[v])
                 paths->distances[v] = 0;  // a source
         }
+
         void tree_edge(const Edge<V>& e) const
         {
             paths->predecessors[e.target] = e.source;
             paths->distances[e.target] = *paths->distances[e.source] + 1;  // NOLINT(bugprone-unchecked-optional-access): its source was reached first
         }
     };
+
     breadth_first_visit(g, std::forward<R>(sources), visitors(Record { &result }, std::forward<Visitor>(visitor)));
     return result;
 }
@@ -350,11 +359,14 @@ auto depth_first_search(const G& g, R&& sources, Visitor&& visitor = {})
 {
     using V = vertex_t<G>;
     auto result = vertex_map<std::optional<V>>(g);
+
     struct Record
     {
         VertexMap<std::optional<V>, V>* parents;
+
         void tree_edge(const Edge<V>& e) const { (*parents)[e.target] = e.source; }
     };
+
     depth_first_visit(g, std::forward<R>(sources), visitors(Record { &result }, std::forward<Visitor>(visitor)));
     return result;
 }
@@ -392,12 +404,16 @@ template<urd::adjacency_graph G>
 auto topological_sort(const G& g)
 {
     using V = vertex_t<G>;
+
     struct Record
     {
         urd::Store<urd::sequence<V>> finished;
+
         void finish_vertex(V v) { finished.push_back(v); }
+
         void back_edge(const Edge<V>& /*edge*/) const { throw not_a_dag(); }
     } record;
+
     depth_first_visit(g, g.vertices(), record);
     std::ranges::reverse(record.finished);
     return std::move(record.finished);
@@ -408,11 +424,14 @@ template<urd::adjacency_graph G>
 auto find_cycle(const G& g)
 {
     using V = vertex_t<G>;
+
     struct Record
     {
         VertexMap<Edge<V>, V> entered_by;
         urd::Store<urd::sequence<Edge<V>>> cycle;
+
         void tree_edge(const Edge<V>& e) { entered_by[e.target] = e; }
+
         ControlFlow back_edge(const Edge<V>& e)
         {
             cycle.push_back(e);
@@ -422,6 +441,7 @@ auto find_cycle(const G& g)
             return ControlFlow::stop;  // one cycle is enough
         }
     } record { vertex_map<Edge<V>>(g), {} };
+
     depth_first_visit(g, g.vertices(), record);
     return std::move(record.cycle);
 }
@@ -454,6 +474,7 @@ auto strong_components(const G& g)
 {
     using V = vertex_t<G>;
     constexpr auto none = std::numeric_limits<std::size_t>::max();
+
     struct Record
     {
         VertexMap<std::size_t, V> order;  ///< when each vertex was discovered
@@ -470,13 +491,17 @@ auto strong_components(const G& g)
             stack.push_back(v);
             on_stack[v] = true;
         }
+
         void tree_edge(const Edge<V>& e) { parent[e.target] = e.source; }
+
         void back_edge(const Edge<V>& e) { low[e.source] = std::min(low[e.source], order[e.target]); }
+
         void forward_or_cross_edge(const Edge<V>& e)
         {
             if (on_stack[e.target])
                 low[e.source] = std::min(low[e.source], order[e.target]);
         }
+
         void finish_vertex(V v)
         {
             if (low[v] == order[v])  // the root of a component: what is above it on the stack
@@ -496,6 +521,7 @@ auto strong_components(const G& g)
                 low[*above] = std::min(low[*above], low[v]);
         }
     } record { vertex_map(g, none), vertex_map(g, none), vertex_map<std::optional<V>>(g), {}, vertex_map(g, false), Components<V> { 0, vertex_map(g, none) } };
+
     depth_first_visit(g, g.vertices(), record);
     return std::move(record.result);
 }

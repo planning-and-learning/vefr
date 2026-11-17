@@ -64,18 +64,31 @@ public:
     virtual ~Visitor() = default;
 
     virtual std::optional<vefr::ControlFlow> start_vertex(Vertex /*vertex*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> discover_vertex(Vertex /*vertex*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> examine_vertex(Vertex /*vertex*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> finish_vertex(Vertex /*vertex*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> examine_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> tree_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> non_tree_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> gray_target(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> black_target(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> back_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> forward_or_cross_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> finish_edge(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> edge_relaxed(const Edge& /*edge*/) { return std::nullopt; }
+
     virtual std::optional<vefr::ControlFlow> edge_not_relaxed(const Edge& /*edge*/) { return std::nullopt; }
 };
 
@@ -121,18 +134,31 @@ public:
     NB_TRAMPOLINE(Visitor);
 
     std::optional<vefr::ControlFlow> start_vertex(Vertex u) override { NB_OVERRIDE(start_vertex, u); }
+
     std::optional<vefr::ControlFlow> discover_vertex(Vertex u) override { NB_OVERRIDE(discover_vertex, u); }
+
     std::optional<vefr::ControlFlow> examine_vertex(Vertex u) override { NB_OVERRIDE(examine_vertex, u); }
+
     std::optional<vefr::ControlFlow> finish_vertex(Vertex u) override { NB_OVERRIDE(finish_vertex, u); }
+
     std::optional<vefr::ControlFlow> examine_edge(const Edge& e) override { NB_OVERRIDE(examine_edge, e); }
+
     std::optional<vefr::ControlFlow> tree_edge(const Edge& e) override { NB_OVERRIDE(tree_edge, e); }
+
     std::optional<vefr::ControlFlow> non_tree_edge(const Edge& e) override { NB_OVERRIDE(non_tree_edge, e); }
+
     std::optional<vefr::ControlFlow> gray_target(const Edge& e) override { NB_OVERRIDE(gray_target, e); }
+
     std::optional<vefr::ControlFlow> black_target(const Edge& e) override { NB_OVERRIDE(black_target, e); }
+
     std::optional<vefr::ControlFlow> back_edge(const Edge& e) override { NB_OVERRIDE(back_edge, e); }
+
     std::optional<vefr::ControlFlow> forward_or_cross_edge(const Edge& e) override { NB_OVERRIDE(forward_or_cross_edge, e); }
+
     std::optional<vefr::ControlFlow> finish_edge(const Edge& e) override { NB_OVERRIDE(finish_edge, e); }
+
     std::optional<vefr::ControlFlow> edge_relaxed(const Edge& e) override { NB_OVERRIDE(edge_relaxed, e); }
+
     std::optional<vefr::ControlFlow> edge_not_relaxed(const Edge& e) override { NB_OVERRIDE(edge_not_relaxed, e); }
 };
 
